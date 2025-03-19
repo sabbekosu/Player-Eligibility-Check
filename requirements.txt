@@ -1,6 +1,6 @@
 streamlit
 pandas
 pdfplumber
-fitz
+pymupdf
 bs4
 pdf2txt
