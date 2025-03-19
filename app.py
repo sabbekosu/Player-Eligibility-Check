@@ -1,7 +1,32 @@
 import streamlit as st
 import pandas as pd
 import pdfplumber
+import fitz  # PyMuPDF for repairing PDFs
 import re
+import tempfile
+
+# Function to repair PDF
+def fix_pdf(input_bytes):
+    """
+    Reads and rewrites the PDF to fix formatting issues from 'Microsoft Print to PDF'.
+    Uses PyMuPDF (fitz) to fix structural issues in the uploaded PDF.
+    """
+    try:
+        # Create a temporary file to store the uploaded PDF
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_pdf:
+            temp_pdf.write(input_bytes)
+            temp_pdf_path = temp_pdf.name  # Get path to temp file
+
+        # Open and repair the PDF
+        repaired_pdf_path = temp_pdf_path.replace(".pdf", "_fixed.pdf")
+        doc = fitz.open(temp_pdf_path)
+        doc.save(repaired_pdf_path)
+        doc.close()
+
+        return repaired_pdf_path  # Return path to fixed PDF
+    except Exception as e:
+        st.error(f"❌ PDF repair failed: {e}")
+        return None  # Return None if repair fails
 
 # Streamlit Title
 st.title("IM Team Club Player Checker")
@@ -24,6 +49,17 @@ im_pdf = st.file_uploader("Upload IM Team Rosters PDF", type="pdf")
 
 # Submit button
 if st.button("Submit") and im_pdf:
+    # Read uploaded PDF into bytes
+    pdf_bytes = im_pdf.read()
+
+    # Fix the PDF immediately after upload
+    fixed_pdf_path = fix_pdf(pdf_bytes)
+    if not fixed_pdf_path:
+        st.error("❌ Unable to repair the PDF. Try re-downloading it differently.")
+        st.stop()  # Stop execution if repair fails
+
+    st.success("✅ PDF repaired successfully! Processing...")
+
     # Combine all club players from multiple CSV files (if any exist)
     club_players = set()
 
@@ -39,8 +75,8 @@ if st.button("Submit") and im_pdf:
     elite_players = set()  # Set to store all elite team players
     elite_teams = {}  # Dictionary to track elite teams {team_name: "Elite"}
 
-    # Parse PDF using pdfplumber
-    with pdfplumber.open(im_pdf) as pdf:
+    # Parse PDF using pdfplumber (now using fixed PDF)
+    with pdfplumber.open(fixed_pdf_path) as pdf:
         current_team = None
         recording_players = False  # Flag to track when we're inside a roster
         current_level = "Regular"  # Default team level is Regular
