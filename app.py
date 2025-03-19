@@ -90,7 +90,7 @@ if st.button("Submit") and im_pdf:
         current_level = "Regular"
     
         for line in lines:
-            if "Oregon State University" in line:
+            if "Oregon State University" in line or "imleagues.com" in line or re.match(r'\d{1,2}/\d{1,2}/\d{2}, \d{1,2}:\d{2} [APap][Mm]', line):
                 continue
             if "->" in line:
                 current_level = "Elite" if "Elite" in line else "Regular"
